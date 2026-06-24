@@ -1,7 +1,7 @@
 pipeline {
 agent any
 
-```
+
 environment {
     IMAGE_NAME = "manoj289/ai-bankapp"
     IMAGE_TAG = "${BUILD_NUMBER}"
@@ -124,7 +124,7 @@ post {
         cleanWs()
     }
 }
-```
+
 
 }
 
