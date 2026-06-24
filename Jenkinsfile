@@ -73,7 +73,7 @@ stage('Check Files') {
         find . -name "*.yaml"
         '''
     }
-},
+}
 
     stage('Deploy MySQL') {
         steps {
