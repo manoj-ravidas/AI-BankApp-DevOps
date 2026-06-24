@@ -65,6 +65,15 @@ stages {
             '''
         }
     }
+stage('Check Files') {
+    steps {
+        sh '''
+        pwd
+        ls -la
+        find . -name "*.yaml"
+        '''
+    }
+},
 
     stage('Deploy MySQL') {
         steps {
