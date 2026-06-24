@@ -23,9 +23,6 @@ stages {
             echo "=== Docker Version ==="
             docker --version
 
-            echo "=== Kubectl Version ==="
-            kubectl version --client
-
             echo "=== Kubernetes Nodes ==="
             kubectl --kubeconfig=$KUBECONFIG get nodes
             '''
@@ -60,13 +57,10 @@ stages {
     stage('Push Docker Image') {
         steps {
             sh '''
-            echo "Pushing image with build number..."
+            echo "Pushing image..."
             docker push $IMAGE_NAME:$IMAGE_TAG
 
-            echo "Tagging latest image..."
             docker tag $IMAGE_NAME:$IMAGE_TAG $IMAGE_NAME:latest
-
-            echo "Pushing latest image..."
             docker push $IMAGE_NAME:latest
             '''
         }
@@ -84,7 +78,6 @@ stages {
         steps {
             sh '''
             kubectl --kubeconfig=$KUBECONFIG apply -f k8s/deployment.yaml
-
             kubectl --kubeconfig=$KUBECONFIG rollout restart deployment ai-bankapp
             '''
         }
@@ -115,7 +108,6 @@ stages {
 }
 
 post {
-
     success {
         echo '===================================='
         echo 'Deployment Successful'
