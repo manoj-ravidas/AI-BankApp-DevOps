@@ -4,27 +4,44 @@ agent any
 ```
 environment {
     IMAGE_NAME = "manoj289/ai-bankapp"
-    IMAGE_TAG  = "${BUILD_NUMBER}"
+    IMAGE_TAG = "${BUILD_NUMBER}"
     KUBECONFIG = "/var/jenkins_home/.kube/config"
 }
 
 stages {
 
-    stage('Checkout') {
+    stage('Checkout Source') {
         steps {
+            echo "Checking out source code..."
             checkout scm
+        }
+    }
+
+    stage('Verify Tools') {
+        steps {
+            sh '''
+            echo "=== Docker Version ==="
+            docker --version
+
+            echo "=== Kubectl Version ==="
+            kubectl version --client
+
+            echo "=== Kubernetes Nodes ==="
+            kubectl --kubeconfig=$KUBECONFIG get nodes
+            '''
         }
     }
 
     stage('Build Docker Image') {
         steps {
             sh '''
+            echo "Building Docker image..."
             docker build -t $IMAGE_NAME:$IMAGE_TAG .
             '''
         }
     }
 
-    stage('Docker Login') {
+    stage('DockerHub Login') {
         steps {
             withCredentials([
                 usernamePassword(
@@ -40,13 +57,16 @@ stages {
         }
     }
 
-    stage('Push Image') {
+    stage('Push Docker Image') {
         steps {
             sh '''
+            echo "Pushing image with build number..."
             docker push $IMAGE_NAME:$IMAGE_TAG
 
+            echo "Tagging latest image..."
             docker tag $IMAGE_NAME:$IMAGE_TAG $IMAGE_NAME:latest
 
+            echo "Pushing latest image..."
             docker push $IMAGE_NAME:latest
             '''
         }
@@ -66,8 +86,14 @@ stages {
             kubectl --kubeconfig=$KUBECONFIG apply -f k8s/deployment.yaml
 
             kubectl --kubeconfig=$KUBECONFIG rollout restart deployment ai-bankapp
+            '''
+        }
+    }
 
-            kubectl --kubeconfig=$KUBECONFIG rollout status deployment ai-bankapp --timeout=300s
+    stage('Wait For Rollout') {
+        steps {
+            sh '''
+            kubectl --kubeconfig=$KUBECONFIG rollout status deployment/ai-bankapp --timeout=300s
             '''
         }
     }
@@ -75,10 +101,13 @@ stages {
     stage('Verify Deployment') {
         steps {
             sh '''
-            kubectl --kubeconfig=$KUBECONFIG get nodes
+            echo "=== Deployments ==="
+            kubectl --kubeconfig=$KUBECONFIG get deploy
 
+            echo "=== Pods ==="
             kubectl --kubeconfig=$KUBECONFIG get pods -o wide
 
+            echo "=== Services ==="
             kubectl --kubeconfig=$KUBECONFIG get svc
             '''
         }
@@ -86,12 +115,17 @@ stages {
 }
 
 post {
+
     success {
+        echo '===================================='
         echo 'Deployment Successful'
+        echo '===================================='
     }
 
     failure {
+        echo '===================================='
         echo 'Pipeline Failed'
+        echo '===================================='
     }
 
     always {
