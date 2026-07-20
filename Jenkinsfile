@@ -1,7 +1,7 @@
 pipeline {
 agent any
 
-
+```
 environment {
     IMAGE_NAME = "manoj289/ai-bankapp"
     IMAGE_TAG = "${BUILD_NUMBER}"
@@ -20,10 +20,10 @@ stages {
     stage('Verify Tools') {
         steps {
             sh '''
-            echo "=== Docker Version ==="
+            echo "===== Docker Version ====="
             docker --version
 
-            echo "=== Kubernetes Nodes ==="
+            echo "===== Kubernetes Nodes ====="
             kubectl --kubeconfig=$KUBECONFIG get nodes
             '''
         }
@@ -32,7 +32,7 @@ stages {
     stage('Build Docker Image') {
         steps {
             sh '''
-            echo "Building Docker image..."
+            echo "===== Building Docker Image ====="
             docker build -t $IMAGE_NAME:$IMAGE_TAG .
             '''
         }
@@ -57,7 +57,7 @@ stages {
     stage('Push Docker Image') {
         steps {
             sh '''
-            echo "Pushing image..."
+            echo "===== Pushing Docker Image ====="
             docker push $IMAGE_NAME:$IMAGE_TAG
 
             docker tag $IMAGE_NAME:$IMAGE_TAG $IMAGE_NAME:latest
@@ -65,15 +65,24 @@ stages {
             '''
         }
     }
-stage('Check Files') {
-    steps {
-        sh '''
-        pwd
-        ls -la
-        find . -name "*.yaml"
-        '''
+
+    stage('Check Files') {
+        steps {
+            sh '''
+            echo "===== Current Directory ====="
+            pwd
+
+            echo "===== Workspace Files ====="
+            ls -la
+
+            echo "===== YAML Files ====="
+            find . -name "*.yaml"
+
+            echo "===== K8S Folder ====="
+            ls -la k8s || true
+            '''
+        }
     }
-}
 
     stage('Deploy MySQL') {
         steps {
@@ -103,13 +112,13 @@ stage('Check Files') {
     stage('Verify Deployment') {
         steps {
             sh '''
-            echo "=== Deployments ==="
+            echo "===== Deployments ====="
             kubectl --kubeconfig=$KUBECONFIG get deploy
 
-            echo "=== Pods ==="
+            echo "===== Pods ====="
             kubectl --kubeconfig=$KUBECONFIG get pods -o wide
 
-            echo "=== Services ==="
+            echo "===== Services ====="
             kubectl --kubeconfig=$KUBECONFIG get svc
             '''
         }
@@ -118,22 +127,22 @@ stage('Check Files') {
 
 post {
     success {
-        echo '===================================='
-        echo 'Deployment Successful'
-        echo '===================================='
+        echo "======================================"
+        echo "Deployment Successful"
+        echo "======================================"
     }
 
     failure {
-        echo '===================================='
-        echo 'Pipeline Failed'
-        echo '===================================='
+        echo "======================================"
+        echo "Pipeline Failed"
+        echo "======================================"
     }
 
     always {
         cleanWs()
     }
 }
-
+```
 
 }
 
